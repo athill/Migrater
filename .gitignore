@@ -1,3 +1,7 @@
+local/
+remote/
+
+
 *.py[cod]
 
 # C extensions
