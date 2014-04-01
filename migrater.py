@@ -1,15 +1,19 @@
+import os, shutil
+from pprint import pprint
+from utils import *
+
 class Migrater:
+	_actions = {}
 
 	def __init__(self, properties, actions={}):
 		if actions is dict:
 			self._actions = actions
 		else:
 			self._actions = self.parseactions(actions)
-		self.config = self.extend(defaults, config)
 		self.p = properties
 		self.p['localroot'] = self.fixPath(self.p['localroot'])
 		self.p['remoteroot'] = self.fixPath(self.p['remoteroot'])		
-		self.m = self.getm(p)
+		self.m = self.getm(self.p)
 
 	#### Properties
 	# actions
@@ -18,13 +22,18 @@ class Migrater:
 		"""Get the current actions."""
 		return self._actions
 
+	# TODO: Not setting, apparently
 	@actions.setter
 	def actions(self, value):
+		pprint('here?')
+		a=1/0
 		self._actions = self.parseactions(value)
+		pprint(self._actions)
 
 
 
-	def backup(backuppath):
+
+	def backup(self, backuppath):
 		p = dict(self.p)
 		p['localroot'] = backuppath
 		m = getm(p)
@@ -35,22 +44,30 @@ class Migrater:
 		    if self.m.exists(rfile):
 		        m.get(path)
 
-	def migrate():
+	def migrate(self, opts={}):
+		# defaults = {
+		# 	'properties': self.p,
+		# 	'actions': self._actions,
+		# }
+		# opts = utils.extend(defaults, opts)
+		# config = opts['properties']
+		# pprint()
 		# # # # Delete
 		for path in self._actions["D"]:
-		    if self.m.exists(path):
-		        self.m.remove(path)
-
+			pprint('?')
+			if self.m.exists(path):
+				self.m.remove(path)
+		pprint(self._actions)
 		# # # # Add/Modify
 		for path in self._actions["A"]+self._actions["M"]:
 		    if not self.m.exists(path):
-		        self.m.makedirs(os.path.dirname(path))
-		    self.m.put(os.path.join(config["localroot"], filen), os.path.join(config["remoteroot"], filen))		
+		        self.m.makedirs(path)
+		    self.m.put(path)		
 
 
 
 	### helpers
-	def getm(p):
+	def getm(self, p):
 		m = None
 		p['localroot'] = self.fixPath(p['localroot'])
 		p['remoteroot'] = self.fixPath(p['remoteroot'])
@@ -63,11 +80,20 @@ class Migrater:
 		return m
 
 	def parseactions(self, value):
+		# dict
+		pprint(value)
+		if isinstance(value, dict):
+			for a in ['A', 'M', 'D']:
+				if a not in value:
+					value[a] = []					
+			return value
 		path = self.fixPath(value)
-		if os.path.isfile(value):
+		# file
+		if os.path.isfile(path):
 			lines = [line.strip() for line in open(value)]
+		# raw text
 		else:
-			lines = value.split(os.linesep)
+			lines = path.split(os.linesep)
 		actions = {
 		    "A": [],   # add
 		    "M": [],   # modify
@@ -142,7 +168,8 @@ class Local(Migrate_Base):
 	def remove(self, remotepath):
 		os.remove(self.remote(remotepath))
 	def makedirs(self, remotepath):
-		shutil.rmtree(self.remote(remotepath))
+		# shutil.rmtree(self.remote(remotepath))
+		shutil.makedirs(self.remote(remotepath))
 	def close(self):
 		pass
 
