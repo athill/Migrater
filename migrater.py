@@ -1,4 +1,4 @@
-import os, shutil
+import os, shutil, errno
 from pprint import pprint
 from utils import *
 
@@ -54,10 +54,10 @@ class Migrater:
 		# pprint()
 		# # # # Delete
 		for path in self._actions["D"]:
-			pprint('?')
+			# pprint('?')
 			if self.m.exists(path):
 				self.m.remove(path)
-		pprint(self._actions)
+		# pprint(self._actions)
 		# # # # Add/Modify
 		for path in self._actions["A"]+self._actions["M"]:
 		    if not self.m.exists(path):
@@ -81,7 +81,7 @@ class Migrater:
 
 	def parseactions(self, value):
 		# dict
-		pprint(value)
+		# pprint(value)
 		if isinstance(value, dict):
 			for a in ['A', 'M', 'D']:
 				if a not in value:
@@ -168,8 +168,15 @@ class Local(Migrate_Base):
 	def remove(self, remotepath):
 		os.remove(self.remote(remotepath))
 	def makedirs(self, remotepath):
-		# shutil.rmtree(self.remote(remotepath))
-		shutil.makedirs(self.remote(remotepath))
+		directory = os.path.dirname(self.remote(remotepath))
+		pprint(directory)
+		try:
+			os.makedirs(directory)
+		except OSError as exc: # Python >2.5
+			if exc.errno == errno.EEXIST and os.path.isdir(directory):
+				pass
+		else: raise		
+
 	def close(self):
 		pass
 
