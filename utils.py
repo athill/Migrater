@@ -2,7 +2,7 @@ import os
 
 
 # trying to bring jQuery.extend to Python
-def extend(self, defaults, opts):
+def extend(defaults, opts):
 	"""Create a new dictionary with a's properties extended by b,
 	without overwriting.
 
@@ -12,5 +12,5 @@ def extend(self, defaults, opts):
 	"""
 	return dict(defaults,**opts)
 
-def fixPath(self, path):
+def fixPath(path):
 	return path.replace('~', os.path.expanduser("~"), 1)

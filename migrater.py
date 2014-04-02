@@ -1,21 +1,25 @@
 import os, shutil, errno
 from pprint import pprint
-from utils import *
+import utils
 
-class Migrater:
+class Migrater(object):
 	_actions = {}
 
-	def __init__(self, properties, actions={}):
-		if actions is dict:
-			self._actions = actions
-		else:
-			self._actions = self.parseactions(actions)
+	def __init__(self, properties={}, actions={}):
+		self._actions = self.parseactions(actions)
 		self.p = properties
+		defaults = {
+			'type': 'local',
+			'localroot': './local',
+			'remoteroot': './remote'
+		}
+		self.p = utils.extend(defaults, properties)
 		self.p['localroot'] = self.fixPath(self.p['localroot'])
 		self.p['remoteroot'] = self.fixPath(self.p['remoteroot'])		
 		self.m = self.getm(self.p)
 
 	#### Properties
+
 	# actions
 	@property
 	def actions(self):
@@ -25,12 +29,11 @@ class Migrater:
 	# TODO: Not setting, apparently
 	@actions.setter
 	def actions(self, value):
-		pprint('here?')
-		a=1/0
 		self._actions = self.parseactions(value)
-		pprint(self._actions)
 
-
+	#stupid workaround hack
+	# def set_actions(self, value):
+	# 	self._actions = self.parseactions(value)	
 
 
 	def backup(self, backuppath):
@@ -57,7 +60,6 @@ class Migrater:
 			# pprint('?')
 			if self.m.exists(path):
 				self.m.remove(path)
-		# pprint(self._actions)
 		# # # # Add/Modify
 		for path in self._actions["A"]+self._actions["M"]:
 		    if not self.m.exists(path):
@@ -81,7 +83,6 @@ class Migrater:
 
 	def parseactions(self, value):
 		# dict
-		# pprint(value)
 		if isinstance(value, dict):
 			for a in ['A', 'M', 'D']:
 				if a not in value:
@@ -113,17 +114,7 @@ class Migrater:
 
 	def fixPath(self, path):
 		return path.replace('~', os.path.expanduser("~"), 1)			
-
-	# trying to bring jQuery.extend to Python
-	def extend(self, defaults, opts):
-		"""Create a new dictionary with a's properties extended by b,
-		without overwriting.
-
-		>>> extend({'a':1,'b':2},{'b':3,'c':4})
-		{'a': 1, 'c': 4, 'b': 2}
-		http://stackoverflow.com/a/12697215
-		"""
-		return dict(defaults,**opts)		
+	
 
 class Migrate_Base:
 	def __init__(self, properties):
@@ -169,7 +160,7 @@ class Local(Migrate_Base):
 		os.remove(self.remote(remotepath))
 	def makedirs(self, remotepath):
 		directory = os.path.dirname(self.remote(remotepath))
-		pprint(directory)
+		# pprint(directory)
 		try:
 			os.makedirs(directory)
 		except OSError as exc: # Python >2.5
@@ -227,3 +218,9 @@ class Sftp(Migrate_Base):
 	def close(self):
 		self.sftp.close()
 		self.transport.close()		
+
+if __name__ == '__main__':
+	m = Migrater()
+	# m.set_actions({'A': ['test']})
+	m.actions = {'A': ['test']}
+	pprint(m.actions)
