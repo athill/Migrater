@@ -1,7 +1,7 @@
 import os, shutil, json
 from pprint import pprint 
 
-class DirFixtures:
+class DirFixtures(object):
 	count = 0
 	# Example structure. A dict of dicts. The only required attributes is type. Type is either 'file' or 'dir'.
 	# If type is file, there is an optional 'content' key for the content of the file (default is '')
