@@ -37,7 +37,7 @@ class TestMigrater(unittest.TestCase):
 	def test_delete(self):
 		self.m.actions = {'D': ['d.txt'] } 
 		self.m.migrate()
-		self.assertTrue(not os.path.exists('remote/d.txt'))
+		self.assertTrue(not os.path.exists('./remote/d.txt'))
 
 
 	# I guess I don't get how passing dicts works in python, reference by default?

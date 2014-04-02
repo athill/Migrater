@@ -154,10 +154,20 @@ class Local(Migrate_Base):
 	def exists(self, path):
 		return os.path.exists(self.remote(path))
 
-	def mkdir(self, remotepath):
-		os.mkdir(self.remote(remotepath))
-	def remove(self, remotepath):
-		os.remove(self.remote(remotepath))
+	def mkdir(self, path):
+		os.mkdir(self.remote(path))
+	def remove(self, path):
+		remotepath = self.remote(path)
+		print(' - ', os.path.abspath(remotepath))
+		print(os.path.exists(remotepath))
+		try:
+			os.remove(remotepath)
+		except OSError as e: # name the Exception `e`
+			print "Failed with:", e.strerror # look what it says
+			print "Error code:", e.code
+		print(os.path.exists(remotepath))
+
+		
 	def makedirs(self, remotepath):
 		directory = os.path.dirname(self.remote(remotepath))
 		# pprint(directory)
@@ -222,5 +232,6 @@ class Sftp(Migrate_Base):
 if __name__ == '__main__':
 	m = Migrater()
 	# m.set_actions({'A': ['test']})
-	m.actions = {'A': ['test']}
-	pprint(m.actions)
+	# m.actions = {'A': ['test']}
+	# pprint(m.actions)
+	os.remove('./remote/d.txt')
