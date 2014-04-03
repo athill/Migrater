@@ -158,14 +158,11 @@ class Local(Migrate_Base):
 		os.mkdir(self.remote(path))
 	def remove(self, path):
 		remotepath = self.remote(path)
-		print(' - ', os.path.abspath(remotepath))
-		print(os.path.exists(remotepath))
 		try:
 			os.remove(remotepath)
 		except OSError as e: # name the Exception `e`
 			print "Failed with:", e.strerror # look what it says
 			print "Error code:", e.code
-		print(os.path.exists(remotepath))
 
 		
 	def makedirs(self, remotepath):
