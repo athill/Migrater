@@ -8,51 +8,79 @@ class TestMigrater(unittest.TestCase):
 	def setUp(self):
 		self.df = DirFixtures()
 		self.df.builds()
-		self.m = Migrater({ 
+		# with open('password.txt', 'r') as pw:
+		# 	password = pw.read()
+		self.p = { 
 			'type': 'local',
-			'localroot': './local',
-			'remoteroot': './remote'
-		}, {})
+		}
+		self.testpath = 'd.txt'
+		self.instances = ['local', 'remote']
+		for instance in self.instances:
+			self.p[instance+'root'] = './'+instance
 
 
 
 	def test_add(self):
-		with open('local/d.txt', 'w') as the_file:
-			the_file.write('Hello\n')
+		actions = {'A': [self.testpath] }
+		self.fix('local', self.testpath, 'local')
 		# time.sleep(2.5)
-		self.m.actions = {'A': ['d.txt'] } # why not working?: class must inherit from object to work
-		self.m.migrate()
-		self.assertTrue(os.path.exists('remote/d.txt'))
+		m = Migrater(self.p, actions)
+		m.migrate()
+		self.assertTrue(os.path.exists(self.os.join('remote', self.testpath)))
+		# revert
+		for instance in self.instances:
+			self.unfix(instance, self.testpath)
 
 	def test_modify(self):
-		newcontent = 'Goodbye\n'
-		with open('local/d.txt', 'w') as the_file:
-			the_file.write(newcontent)
-		self.m.actions = {'M': ['d.txt'] } 
-		self.m.migrate()
-		with open('remote/d.txt', 'r') as content_file:
-			content = content_file.read()		
-		self.assertTrue(content == newcontent)
+		actions = {'M': [self.testpath] } 
+		for instance in self.instances:
+			self.fix(instance, self.testpath, instance)
+		m = Migrater(self.p, actions)
+		m.migrate()
+		with open(os.path.join(self.p['remoteroot'], self.testpath), 'r') as f:
+			content = f.read()		
+		self.assertTrue(content == 'local')
+		# revert
+		for instance in self.instances:
+			self.unfix(instance, self.testpath)
 
 	def test_delete(self):
-		self.m.actions = {'D': ['d.txt'] } 
-		self.m.migrate()
-		self.assertTrue(not os.path.exists('./remote/d.txt'))
+		actions = {'D': [self.testpath] } 
+		self.fix('remote', self.testpath, 'remote')
+		m = Migrater(self.p, actions)
+		m.migrate()
+		exists  = os.path.exists(self.os.join('remote', self.testpath))
+		self.assertTrue(not exists)
+		# no unfix required
+
+	def test_backup(self):
+		m = Migrater(self.p)
+		m.backup('backup');
 
 
-	# I guess I don't get how passing dicts works in python, reference by default?
-	def test_actions(self):
-		fixture = { 'A': ['e.txt'] }
-		self.m.actions = fixture
-		# fixture['Q'] = []
-		# fixture['D'] = []
-		# print(fixture)
-		# print(self.m.actions)
-		self.assertTrue(self.m.actions == fixture)
+
+	# # I guess I don't get how passing dicts works in python, reference by default?
+	# def test_actions(self):
+	# 	fixture = { 'A': ['e.txt'] }
+	# 	self.m.actions = fixture # class must inherit from object to work
+	# 	# fixture['Q'] = []
+	# 	# fixture['D'] = []
+	# 	# print(fixture)
+	# 	# print(self.m.actions)
+	# 	self.assertTrue(self.m.actions == fixture)
 
 	def tearDown(self):
 		# self.df.destroys()
 		pass
+
+	def fix(self, instance, filepath, content):
+		path = os.path.join(self.p[instance+'root'], filepath);
+		with open(path, 'w') as f:
+			f.write(content)
+
+	def unfix(self, instance, filepath):
+		path = os.path.join(self.p[instance+'root'], filepath);
+		os.remove(path)
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,5 +1,6 @@
 local/
 remote/
+password.txt
 
 
 *.py[cod]
