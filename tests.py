@@ -8,12 +8,15 @@ class TestMigrater(unittest.TestCase):
 	def setUp(self):
 		self.df = DirFixtures()
 		self.df.builds()
-		# with open('password.txt', 'r') as pw:
-		# 	password = pw.read()
+		with open('password.txt', 'r') as pw:
+			password = pw.read()
 		self.p = { 
 			'type': 'local',
+			'host': 'athill@localhost',
+			'password': password
 		}
-		self.testpath = 'd.txt'
+		self.testpath = 'D/d.txt'
+		self.testpath2 = 'Q/q.txt'
 		self.instances = ['local', 'remote']
 		for instance in self.instances:
 			self.p[instance+'root'] = './'+instance
@@ -26,6 +29,7 @@ class TestMigrater(unittest.TestCase):
 		# time.sleep(2.5)
 		m = Migrater(self.p, actions)
 		m.migrate()
+		m.close()
 		self.assertTrue(os.path.exists(os.path.join('remote', self.testpath)))
 		# revert
 		for instance in self.instances:
@@ -37,6 +41,7 @@ class TestMigrater(unittest.TestCase):
 			self.fix(instance, self.testpath, instance)
 		m = Migrater(self.p, actions)
 		m.migrate()
+		m.close()
 		with open(os.path.join(self.p['remoteroot'], self.testpath), 'r') as f:
 			content = f.read()		
 		self.assertTrue(content == 'local')
@@ -49,13 +54,24 @@ class TestMigrater(unittest.TestCase):
 		self.fix('remote', self.testpath, 'remote')
 		m = Migrater(self.p, actions)
 		m.migrate()
+		m.close()
 		exists  = os.path.exists(os.path.join('remote', self.testpath))
+
 		self.assertTrue(not exists)
 		# no unfix required
 
 	def test_backup(self):
-		m = Migrater(self.p)
-		m.backup('backup');
+		backupdir = './backup'
+		actions = {'D': [self.testpath], 'M': [self.testpath2] } 
+		self.fix('remote', self.testpath, 'um')
+		self.fix('remote', self.testpath2, 'um')
+		m = Migrater(self.p, actions)
+		m.backup(backupdir)
+		m.close()
+		self.assertTrue(os.path.exists(os.path.join(backupdir, self.testpath)))
+		self.assertTrue(os.path.exists(os.path.join(backupdir, self.testpath2)))
+		self.unfix('remote', self.testpath)
+		self.unfix('remote', self.testpath2)
 
 
 

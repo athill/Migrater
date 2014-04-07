@@ -1,4 +1,4 @@
-import os, shutil, errno
+import os, shutil, errno,paramiko
 from pprint import pprint
 import utils
 
@@ -41,11 +41,12 @@ class Migrater(object):
 		p['localroot'] = backuppath
 		m = self.getm(p)
 		for path in self._actions["D"]+self._actions["M"]:
-		    d = os.path.dirname(m.local(path))
-		    if not os.path.exists(d):
-		    	os.makedirs(d)
-		    if self.m.exists(rfile):
-		    	m.get(path)
+			print(path)
+			d = os.path.dirname(m.local(path))
+			if not os.path.exists(d):
+				os.makedirs(d)
+			if self.m.exists(path):
+				m.get(path)
 
 	def migrate(self, opts={}):
 		# defaults = {
@@ -64,7 +65,10 @@ class Migrater(object):
 		for path in self._actions["A"]+self._actions["M"]:
 		    if not self.m.exists(path):
 		        self.m.makedirs(path)
-		    self.m.put(path)		
+		    self.m.put(path)
+
+	def close(self):
+		self.m.close()	
 
 
 
@@ -180,14 +184,23 @@ class Local(Migrate_Base):
 
 class Sftp(Migrate_Base):
 	import paramiko
+	
 	def __init__(self, properties):
-		port = properties['port'] if 'port' in properties else '22'
+		port = properties['port'] if 'port' in properties else 22
 		# # Open a transport
-		self.transport = paramiko.Transport((properties['host'], port))
+		host = properties['host'].split('@')
+		if len(host) > 1:
+			[user, host] = [host[0], host[1]]
+		else:
+			userhome = os.path.expanduser('~')
+			user = os.path.split(userhome)[-1]
+		print(host, port)
+		self.transport = paramiko.Transport((host, port))
+
 		# # # Auth
-		self.transport.connect(username = properties['username'], password = properties['password'])
+		self.transport.connect(username = user, password = properties['password'])
 		# # # Go!
-		self.sftp = paramiko.SFTPClient.from_transport(transport)
+		self.sftp = paramiko.SFTPClient.from_transport(self.transport)
 		self.p = properties
 
 	def get(self, path):
