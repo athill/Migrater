@@ -39,13 +39,13 @@ class Migrater(object):
 	def backup(self, backuppath):
 		p = dict(self.p)
 		p['localroot'] = backuppath
-		m = getm(p)
+		m = self.getm(p)
 		for path in self._actions["D"]+self._actions["M"]:
 		    d = os.path.dirname(m.local(path))
 		    if not os.path.exists(d):
 		    	os.makedirs(d)
 		    if self.m.exists(rfile):
-		        m.get(path)
+		    	m.get(path)
 
 	def migrate(self, opts={}):
 		# defaults = {
@@ -173,7 +173,7 @@ class Local(Migrate_Base):
 		except OSError as exc: # Python >2.5
 			if exc.errno == errno.EEXIST and os.path.isdir(directory):
 				pass
-		else: raise		
+			else: raise		
 
 	def close(self):
 		pass

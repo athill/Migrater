@@ -26,7 +26,7 @@ class TestMigrater(unittest.TestCase):
 		# time.sleep(2.5)
 		m = Migrater(self.p, actions)
 		m.migrate()
-		self.assertTrue(os.path.exists(self.os.join('remote', self.testpath)))
+		self.assertTrue(os.path.exists(os.path.join('remote', self.testpath)))
 		# revert
 		for instance in self.instances:
 			self.unfix(instance, self.testpath)
@@ -49,7 +49,7 @@ class TestMigrater(unittest.TestCase):
 		self.fix('remote', self.testpath, 'remote')
 		m = Migrater(self.p, actions)
 		m.migrate()
-		exists  = os.path.exists(self.os.join('remote', self.testpath))
+		exists  = os.path.exists(os.path.join('remote', self.testpath))
 		self.assertTrue(not exists)
 		# no unfix required
 
@@ -74,6 +74,11 @@ class TestMigrater(unittest.TestCase):
 		pass
 
 	def fix(self, instance, filepath, content):
+		path = os.path.join(self.p[instance+'root'], filepath);
+		directory = os.path.dirname(path)
+		if directory != '':
+			if not os.path.exists(directory):
+				os.makedirs(directory)
 		path = os.path.join(self.p[instance+'root'], filepath);
 		with open(path, 'w') as f:
 			f.write(content)
