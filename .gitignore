@@ -2,7 +2,7 @@ local/
 remote/
 backup/
 password.txt
-
+experiment.py
 
 *.py[cod]
 
