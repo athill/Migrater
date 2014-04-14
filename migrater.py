@@ -26,17 +26,14 @@ class Migrater(object):
 		"""Get the current actions."""
 		return self._actions
 
-	# TODO: Not setting, apparently
 	@actions.setter
 	def actions(self, value):
 		self._actions = self.parseactions(value)
 
-	#stupid workaround hack
-	# def set_actions(self, value):
-	# 	self._actions = self.parseactions(value)	
-
+	#### Methods
 
 	def backup(self, backuppath):
+		"""Backup modified and deleted files to to backupdir"""
 		p = dict(self.p)
 		p['localroot'] = backuppath
 		m = self.getm(p)
@@ -58,13 +55,12 @@ class Migrater(object):
 		# pprint()
 		# # # # Delete
 		for path in self._actions["D"]:
-			# pprint('?')
 			if self.m.exists(path):
 				self.m.remove(path)
 		# # # # Add/Modify
 		for path in self._actions["A"]+self._actions["M"]:
 		    if not self.m.exists(path):
-		        self.m.makedirs(path)
+		        self.m.makedirs(os.path.dirname(path))
 		    self.m.put(path)
 
 	def close(self):
@@ -194,19 +190,22 @@ class Sftp(Migrate_Base):
 		else:
 			userhome = os.path.expanduser('~')
 			user = os.path.split(userhome)[-1]
-		print(host, port)
 		self.transport = paramiko.Transport((host, port))
 
 		# # # Auth
 		self.transport.connect(username = user, password = properties['password'])
 		# # # Go!
 		self.sftp = paramiko.SFTPClient.from_transport(self.transport)
+		# self.sftp.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 		self.p = properties
 
 	def get(self, path):
 		self.sftp.get(self.remote(remotepath), self.local(localpath))
-	def put(self, localpath, remotepath):
-		self.sftp.put(self.local(localpath), self.remote(remotepath))
+	def put(self, path):
+		localpath = self.local(path)
+		remotepath = self.remote(path)
+		# print(localpath, remotepath)
+		self.sftp.put(localpath, remotepath)
 	def exists(self, remotepath):
 	    """os.path.exists for paramiko's SCP object
 	       http://stackoverflow.com/questions/850749/check-whether-a-path-exists-on-a-remote-host-using-paramiko
@@ -219,15 +218,22 @@ class Sftp(Migrate_Base):
 	        raise
 	    else:
 	        return True  
-	def mkdir(self, remotepath):
-		sftp.mkdir(self.remote(remotepath), 0755)
-	def remove(self, remotepath):
-		raise NotImplementedError	
-	def makedirs(self, remotepath):
+	def mkdir(self, path):
+		self.sftp.mkdir(self.remote(path), 0755)
+	def remove(self, path):
+		remotepath = self.remote(path)
+		print('remotepath: ', remotepath)
+		print('exists', os.path.exists(remotepath))
+		self.sftp.remove(remotepath)
+	def makedirs(self, path):
+		remotepath = self.remote(path)
 		path_array = remotepath.split(os.sep)
-		chkpath = self.p['remoteroot']
+		chkpath = '/'
+		# pprint(path_array)
 		for part in path_array:
 			chkpath = os.path.join(chkpath, part)
+			if chkpath == '':
+				continue
 			# create directory if it doesn't exist
 			# somewhat convoluted. directory creation is in the except clause
 			try:
