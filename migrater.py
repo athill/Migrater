@@ -6,7 +6,7 @@ class Migrater(object):
 	_actions = {}
 
 	def __init__(self, properties={}, actions={}):
-		self._actions = self.parseactions(actions)
+		self.actions = actions
 		self.p = properties
 		defaults = {
 			'type': 'local',
@@ -28,7 +28,49 @@ class Migrater(object):
 
 	@actions.setter
 	def actions(self, value):
-		self._actions = self.parseactions(value)
+		print('in setter')
+		actions = {
+		    "A": [],   # add
+		    "M": [],   # modify
+		    "D": []    # delete
+		}		
+		# dict
+		if isinstance(value, dict):
+			for a in actions.keys():
+				if a in value.keys():
+					actions[a] = value[a]
+		else:
+			path = self.fixPath(value)
+			# file
+			if os.path.isfile(path):
+				lines = [line.strip() for line in open(value)]
+			# raw text
+			else:
+				lines = path.split(os.linesep)	
+			for line in lines:
+			    if line == '':
+			         continue
+			    # print line
+			    action = line[0]
+			    filen = line[1:].strip()
+			    if action in actions.keys():
+			        actions[action].append(filen)
+			    else:
+			        raise Exception("Unknown action: '%s'" % (action))
+
+
+		self._actions = actions
+
+	# properties
+	@property
+	def properties(self):
+		"""Get the current properties."""
+		return self._properties
+
+	@properties.setter
+	def properties(self, value):
+		self._properties = self.parseactions(value)
+
 
 	#### Methods
 
@@ -246,8 +288,15 @@ class Sftp(Migrate_Base):
 		self.transport.close()		
 
 if __name__ == '__main__':
-	m = Migrater()
+	properties = {
+		'type': 'local',
+		'remoteroot': '/that',
+		'localroot': '/this'
+	}
+	actions = { "A": ['test.py']}
+	m = Migrater(properties, actions)
+	pprint(m.actions)
 	# m.set_actions({'A': ['test']})
 	# m.actions = {'A': ['test']}
 	# pprint(m.actions)
-	os.remove('./remote/d.txt')
+	# os.remove('./remote/d.txt')
