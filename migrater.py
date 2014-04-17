@@ -4,18 +4,11 @@ import utils
 
 class Migrater(object):
 	_actions = {}
+	_p = {}
 
 	def __init__(self, properties={}, actions={}):
 		self.actions = actions
-		self.p = properties
-		defaults = {
-			'type': 'local',
-			'localroot': './local',
-			'remoteroot': './remote'
-		}
-		self.p = utils.extend(defaults, properties)
-		self.p['localroot'] = self.fixPath(self.p['localroot'])
-		self.p['remoteroot'] = self.fixPath(self.p['remoteroot'])		
+		self.p = properties	
 		self.m = self.getm(self.p)
 
 	#### Properties
@@ -28,7 +21,7 @@ class Migrater(object):
 
 	@actions.setter
 	def actions(self, value):
-		print('in setter')
+		# print('in setter')
 		actions = {
 		    "A": [],   # add
 		    "M": [],   # modify
@@ -46,7 +39,8 @@ class Migrater(object):
 				lines = [line.strip() for line in open(value)]
 			# raw text
 			else:
-				lines = path.split(os.linesep)	
+				lines = path.split(os.linesep)
+			# parse
 			for line in lines:
 			    if line == '':
 			         continue
@@ -61,25 +55,33 @@ class Migrater(object):
 
 		self._actions = actions
 
-	# properties
+	# properties (p)
 	@property
-	def properties(self):
-		"""Get the current properties."""
-		return self._properties
+	def p(self):
+		"""Get the current p."""
+		return self._p
 
-	@properties.setter
-	def properties(self, value):
-		self._properties = self.parseactions(value)
+	@p.setter
+	def p(self, value):
+		defaults = {
+			'type': 'local',
+			'localroot': './local',
+			'remoteroot': './remote'
+		}
+		p = utils.extend(defaults, value)
+		p['localroot'] = self.fixPath(p['localroot'])
+		p['remoteroot'] = self.fixPath(p['remoteroot'])		
+		self._p = p
 
 
 	#### Methods
 
 	def backup(self, backuppath):
-		"""Backup modified and deleted files to to backupdir"""
+		"""Backup modified and deleted files to to backuppath"""
 		p = dict(self.p)
 		p['localroot'] = backuppath
 		m = self.getm(p)
-		for path in self._actions["D"]+self._actions["M"]:
+		for path in self.actions["D"]+self.actions["M"]:
 			print(path)
 			d = os.path.dirname(m.local(path))
 			if not os.path.exists(d):
@@ -88,19 +90,19 @@ class Migrater(object):
 				m.get(path)
 
 	def migrate(self, opts={}):
-		# defaults = {
-		# 	'properties': self.p,
-		# 	'actions': self._actions,
-		# }
-		# opts = utils.extend(defaults, opts)
-		# config = opts['properties']
-		# pprint()
+		"""Act on file paths in self.actions from localroot to remoteroot based on action type:
+			A: Add
+			M: Modify (overwrite)
+			D: Delete. These are based on Git name-status output
+		In practice, A and M copy from local to remote and D deletes from remote.
+		"""
+		actions = opts['actions'] if 'actions' in opts.keys() else self.actions
 		# # # # Delete
-		for path in self._actions["D"]:
+		for path in self.actions["D"]:
 			if self.m.exists(path):
 				self.m.remove(path)
 		# # # # Add/Modify
-		for path in self._actions["A"]+self._actions["M"]:
+		for path in self.actions["A"]+self.actions["M"]:
 		    if not self.m.exists(path):
 		        self.m.makedirs(os.path.dirname(path))
 		    self.m.put(path)
@@ -111,10 +113,14 @@ class Migrater(object):
 
 
 	### helpers
-	def getm(self, p):
+	def getm(self, p=None):
+		"""Get a migrater instance based on p (properties)""". 
+		if p == None:
+			p = self.p
+		else:
+			p['localroot'] = self.fixPath(p['localroot'])
+			p['remoteroot'] = self.fixPath(p['remoteroot'])
 		m = None
-		p['localroot'] = self.fixPath(p['localroot'])
-		p['remoteroot'] = self.fixPath(p['remoteroot'])
 		if p['type'] == 'sftp':
 			m = Sftp(p)
 		elif p['type'] == 'ftp':
@@ -123,58 +129,36 @@ class Migrater(object):
 			m = Local(p)		
 		return m
 
-	def parseactions(self, value):
-		# dict
-		if isinstance(value, dict):
-			for a in ['A', 'M', 'D']:
-				if a not in value:
-					value[a] = []					
-			return value
-		path = self.fixPath(value)
-		# file
-		if os.path.isfile(path):
-			lines = [line.strip() for line in open(value)]
-		# raw text
-		else:
-			lines = path.split(os.linesep)
-		actions = {
-		    "A": [],   # add
-		    "M": [],   # modify
-		    "D": []    # delete
-		}		
-		for line in lines:
-		    if line == '':
-		         continue
-		    # print line
-		    action = line[0]
-		    filen = line[1:].strip()
-		    if action in actions.keys():
-		        actions[action].append(filen)
-		    else:
-		        raise Exception("Unknown action: '%s'" % (action))
-		return actions
-
 	def fixPath(self, path):
 		return path.replace('~', os.path.expanduser("~"), 1)			
 	
 
 class Migrate_Base:
+	"""Abstract class. Mostly an interface with some basic, overridable functionality. 
+	Local and SFTP are current implementations. 
+	"""
 	def __init__(self, properties):
+		"""Override any of the default properties (e.g., type, localroot, remoteroot, etc.)"""
 		self.p = properties
-	# implement these
-	def get(self, path):
-		raise NotImplementedError
+	#### implement these
+
 	def put(self, path):
+		"""Copy path from localroot to remoteroot"""
+		raise NotImplementedError
+	def get(self, path):
+		"""Copy path from remoteroot to localroot"""
 		raise NotImplementedError
 	def exists(self, path):
-		raise NotImplementedError
-	def mkdir(self, path):
+		"""Whether path exists on remoteroot"""
 		raise NotImplementedError
 	def remove(self, path):
+		"""Remove file from path on remoteroot"""
 		raise NotImplementedError	
 	def makedirs(self, path):
+		"""Create necessary directories under remoteroot"""
 		raise NotImplementedError
 	def close(self):
+		"""Close any remote connections"""
 		raise NotImplementedError
 
 	# shared functionality
@@ -195,9 +179,6 @@ class Local(Migrate_Base):
 
 	def exists(self, path):
 		return os.path.exists(self.remote(path))
-
-	def mkdir(self, path):
-		os.mkdir(self.remote(path))
 	def remove(self, path):
 		remotepath = self.remote(path)
 		try:
@@ -260,8 +241,6 @@ class Sftp(Migrate_Base):
 	        raise
 	    else:
 	        return True  
-	def mkdir(self, path):
-		self.sftp.mkdir(self.remote(path), 0755)
 	def remove(self, path):
 		remotepath = self.remote(path)
 		print('remotepath: ', remotepath)
@@ -289,13 +268,10 @@ class Sftp(Migrate_Base):
 
 if __name__ == '__main__':
 	properties = {
-		'type': 'local',
-		'remoteroot': '/that',
-		'localroot': '/this'
 	}
 	actions = { "A": ['test.py']}
 	m = Migrater(properties, actions)
-	pprint(m.actions)
+	pprint(m.p)
 	# m.set_actions({'A': ['test']})
 	# m.actions = {'A': ['test']}
 	# pprint(m.actions)
