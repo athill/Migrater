@@ -79,7 +79,7 @@ class Migrater(object):
 	def backup(self, backuppath):
 		"""Backup modified and deleted files to to backuppath"""
 		p = dict(self.p)
-		p['localroot'] = backuppath
+		p['localroot'] = self.fixPath(backuppath)
 		m = self.getm(p)
 		for path in self.actions["D"]+self.actions["M"]:
 			print(path)
@@ -99,6 +99,7 @@ class Migrater(object):
 		actions = opts['actions'] if 'actions' in opts.keys() else self.actions
 		# # # # Delete
 		for path in self.actions["D"]:
+
 			if self.m.exists(path):
 				self.m.remove(path)
 		# # # # Add/Modify
@@ -114,7 +115,7 @@ class Migrater(object):
 
 	### helpers
 	def getm(self, p=None):
-		"""Get a migrater instance based on p (properties)""". 
+		"""Get a migrater instance based on p (properties)"""
 		if p == None:
 			p = self.p
 		else:
@@ -223,16 +224,17 @@ class Sftp(Migrate_Base):
 		self.p = properties
 
 	def get(self, path):
-		self.sftp.get(self.remote(remotepath), self.local(localpath))
+		self.sftp.get(self.remote(path), self.local(path))
 	def put(self, path):
 		localpath = self.local(path)
 		remotepath = self.remote(path)
 		# print(localpath, remotepath)
 		self.sftp.put(localpath, remotepath)
-	def exists(self, remotepath):
+	def exists(self, path):
 	    """os.path.exists for paramiko's SCP object
 	       http://stackoverflow.com/questions/850749/check-whether-a-path-exists-on-a-remote-host-using-paramiko
 	    """
+	    remotepath = self.remote(path)
 	    try:
 	        self.sftp.stat(remotepath)
 	    except IOError, e:
@@ -243,8 +245,6 @@ class Sftp(Migrate_Base):
 	        return True  
 	def remove(self, path):
 		remotepath = self.remote(path)
-		print('remotepath: ', remotepath)
-		print('exists', os.path.exists(remotepath))
 		self.sftp.remove(remotepath)
 	def makedirs(self, path):
 		remotepath = self.remote(path)

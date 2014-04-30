@@ -23,31 +23,31 @@ class TestMigrater(unittest.TestCase):
 
 
 
-	# def test_add(self):
-	# 	actions = {'A': [self.testpath] }
-	# 	self.fix('local', self.testpath, 'local')
-	# 	# time.sleep(2.5)
-	# 	m = Migrater(self.p, actions)
-	# 	m.migrate()
-	# 	m.close()
-	# 	self.assertTrue(os.path.exists(os.path.join('remote', self.testpath)))
-	# 	# revert
-	# 	for instance in self.instances:
-	# 		self.unfix(instance, self.testpath)
+	def test_add(self):
+		actions = {'A': [self.testpath] }
+		self.fix('local', self.testpath, 'local')
+		# time.sleep(2.5)
+		m = Migrater(self.p, actions)
+		m.migrate()
+		m.close()
+		self.assertTrue(os.path.exists(os.path.join('remote', self.testpath)))
+		# revert
+		for instance in self.instances:
+			self.unfix(instance, self.testpath)
 
-	# def test_modify(self):
-	# 	actions = {'M': [self.testpath] } 
-	# 	for instance in self.instances:
-	# 		self.fix(instance, self.testpath, instance)
-	# 	m = Migrater(self.p, actions)
-	# 	m.migrate()
-	# 	m.close()
-	# 	with open(os.path.join(self.p['remoteroot'], self.testpath), 'r') as f:
-	# 		content = f.read()		
-	# 	self.assertTrue(content == 'local')
-	# 	# revert
-	# 	for instance in self.instances:
-	# 		self.unfix(instance, self.testpath)
+	def test_modify(self):
+		actions = {'M': [self.testpath] } 
+		for instance in self.instances:
+			self.fix(instance, self.testpath, instance)
+		m = Migrater(self.p, actions)
+		m.migrate()
+		m.close()
+		with open(os.path.join(self.p['remoteroot'], self.testpath), 'r') as f:
+			content = f.read()		
+		self.assertTrue(content == 'local')
+		# revert
+		for instance in self.instances:
+			self.unfix(instance, self.testpath)
 
 	def test_delete(self):
 		actions = {'D': [self.testpath] } 
@@ -57,24 +57,23 @@ class TestMigrater(unittest.TestCase):
 		m.migrate()
 		m.close()
 		remotepath = os.path.join(self.p['remoteroot'], self.testpath)
-		print('remotepath in test', remotepath)
 		exists  = os.path.exists(remotepath)
 
 		self.assertTrue(not exists)
 		# no unfix required
 
-	# def test_backup(self):
-	# 	backupdir = './backup'
-	# 	actions = {'D': [self.testpath], 'M': [self.testpath2] } 
-	# 	self.fix('remote', self.testpath, 'um')
-	# 	self.fix('remote', self.testpath2, 'um')
-	# 	m = Migrater(self.p, actions)
-	# 	m.backup(backupdir)
-	# 	m.close()
-	# 	self.assertTrue(os.path.exists(os.path.join(backupdir, self.testpath)))
-	# 	self.assertTrue(os.path.exists(os.path.join(backupdir, self.testpath2)))
-	# 	self.unfix('remote', self.testpath)
-	# 	self.unfix('remote', self.testpath2)
+	def test_backup(self):
+		backupdir = './backup'
+		actions = {'D': [self.testpath], 'M': [self.testpath2] } 
+		self.fix('remote', self.testpath, 'um')
+		self.fix('remote', self.testpath2, 'um')
+		m = Migrater(self.p, actions)
+		m.backup(backupdir)
+		m.close()
+		self.assertTrue(os.path.exists(os.path.join(backupdir, self.testpath)))
+		self.assertTrue(os.path.exists(os.path.join(backupdir, self.testpath2)))
+		self.unfix('remote', self.testpath)
+		self.unfix('remote', self.testpath2)
 
 
 
@@ -99,7 +98,7 @@ class TestMigrater(unittest.TestCase):
 			if not os.path.exists(directory):
 				os.makedirs(directory)
 		path = os.path.join(self.p[instance+'root'], filepath);
-		print('path in fix', path)
+		# print('path in fix', path)
 		with open(path, 'w') as f:
 			f.write(content)
 
