@@ -82,7 +82,6 @@ class Migrater(object):
 		p['localroot'] = self.fixPath(backuppath)
 		m = self.getm(p)
 		for path in self.actions["D"]+self.actions["M"]:
-			print(path)
 			d = os.path.dirname(m.local(path))
 			if not os.path.exists(d):
 				os.makedirs(d)

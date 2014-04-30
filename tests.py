@@ -1,4 +1,4 @@
-import unittest, os, time
+import unittest, os, time, shutil
 from dirfixtures import DirFixtures
 from migrater import Migrater
 
@@ -18,6 +18,7 @@ class TestMigrater(unittest.TestCase):
 		self.testpath = 'd.txt'
 		self.testpath2 = 'q.txt'
 		self.instances = ['local', 'remote']
+		self.backupdir = './backup'
 		for instance in self.instances:
 			self.p[instance+'root'] = os.path.join(os.getcwd(), instance)
 
@@ -63,32 +64,22 @@ class TestMigrater(unittest.TestCase):
 		# no unfix required
 
 	def test_backup(self):
-		backupdir = './backup'
+		
 		actions = {'D': [self.testpath], 'M': [self.testpath2] } 
 		self.fix('remote', self.testpath, 'um')
 		self.fix('remote', self.testpath2, 'um')
 		m = Migrater(self.p, actions)
-		m.backup(backupdir)
+		m.backup(self.backupdir)
 		m.close()
-		self.assertTrue(os.path.exists(os.path.join(backupdir, self.testpath)))
-		self.assertTrue(os.path.exists(os.path.join(backupdir, self.testpath2)))
+		self.assertTrue(os.path.exists(os.path.join(self.backupdir, self.testpath)))
+		self.assertTrue(os.path.exists(os.path.join(self.backupdir, self.testpath2)))
 		self.unfix('remote', self.testpath)
 		self.unfix('remote', self.testpath2)
 
 
-
-	# # I guess I don't get how passing dicts works in python, reference by default?
-	# def test_actions(self):
-	# 	fixture = { 'A': ['e.txt'] }
-	# 	self.m.actions = fixture # class must inherit from object to work
-	# 	# fixture['Q'] = []
-	# 	# fixture['D'] = []
-	# 	# print(fixture)
-	# 	# print(self.m.actions)
-	# 	self.assertTrue(self.m.actions == fixture)
-
 	def tearDown(self):
-		# self.df.destroys()
+		self.df.destroys()
+		shutil.rmtree(self.backupdir)
 		pass
 
 	def fix(self, instance, filepath, content):
@@ -98,7 +89,6 @@ class TestMigrater(unittest.TestCase):
 			if not os.path.exists(directory):
 				os.makedirs(directory)
 		path = os.path.join(self.p[instance+'root'], filepath);
-		# print('path in fix', path)
 		with open(path, 'w') as f:
 			f.write(content)
 
