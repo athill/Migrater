@@ -10,24 +10,24 @@ class TestMigrater(unittest.TestCase):
 		self.df.builds()
 		with open('password.txt', 'r') as pw:
 			password = pw.read()
+		# set up test properties
 		self.p = { 
 			'type': 'sftp',
 			'host': 'athill@localhost',
 			'password': password
 		}
-		self.testpath = 'd.txt'
-		self.testpath2 = 'q.txt'
 		self.instances = ['local', 'remote']
-		self.backupdir = './backup'
+		self.backupdir = os.path.join(os.getcwd(), 'backup')
 		for instance in self.instances:
 			self.p[instance+'root'] = os.path.join(os.getcwd(), instance)
-
+		# test parameters
+		self.testpath = 'A/d.txt'
+		self.testpath2 = 'B/q.txt'
 
 
 	def test_add(self):
 		actions = {'A': [self.testpath] }
 		self.fix('local', self.testpath, 'local')
-		# time.sleep(2.5)
 		m = Migrater(self.p, actions)
 		m.migrate()
 		m.close()
@@ -53,7 +53,6 @@ class TestMigrater(unittest.TestCase):
 	def test_delete(self):
 		actions = {'D': [self.testpath] } 
 		self.fix('remote', self.testpath, 'remote')
-		# quit()
 		m = Migrater(self.p, actions)
 		m.migrate()
 		m.close()
@@ -75,11 +74,11 @@ class TestMigrater(unittest.TestCase):
 		self.assertTrue(os.path.exists(os.path.join(self.backupdir, self.testpath2)))
 		self.unfix('remote', self.testpath)
 		self.unfix('remote', self.testpath2)
+		shutil.rmtree(self.backupdir)
 
 
 	def tearDown(self):
 		self.df.destroys()
-		shutil.rmtree(self.backupdir)
 		pass
 
 	def fix(self, instance, filepath, content):

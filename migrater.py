@@ -183,14 +183,13 @@ class Local(Migrate_Base):
 		remotepath = self.remote(path)
 		try:
 			os.remove(remotepath)
-		except OSError as e: # name the Exception `e`
-			print "Failed with:", e.strerror # look what it says
+		except OSError as e: 
+			print "Failed with:", e.strerror
 			print "Error code:", e.code
 
 		
 	def makedirs(self, remotepath):
 		directory = os.path.dirname(self.remote(remotepath))
-		# pprint(directory)
 		try:
 			os.makedirs(directory)
 		except OSError as exc: # Python >2.5

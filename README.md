@@ -7,6 +7,8 @@ Migrater is a Python module to sync up Point B (remote) with Point A (local) bas
 
 SFTP? FTP? Local? Migrater don't care (just give it the proper configuration).
 
+Status: Works with local directories and SFTP.
+
 Concepts
 --------
 
