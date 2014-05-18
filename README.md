@@ -73,16 +73,4 @@ The idea being to accept direct Git output or user input conveying the same info
 Usage
 -----
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+At this point, modify __main__ in migrater.py to set up your properties and actions and call backup() and migrate(). The hope is that Unified Migration Theory (umt), will create a .umt directory within your project root, where settings and backups are stored and actions are passed via the command line.
